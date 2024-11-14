@@ -1,0 +1,66 @@
+# Built application files
+*.apk
+*.ap_
+
+# Files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# IDEA/Android Studio project files
+*.iml
+.idea/*
+!.idea/copyright
+# Keep the code styles.
+!/.idea/codeStyles
+/.idea/codeStyles/*
+!/.idea/codeStyles/Project.xml
+!/.idea/codeStyles/codeStyleConfig.xml
+
+# Eclipse project files
+.classpath
+.project
+
+# Windows thumbnail db
+.DS_Store
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Gradle cache
+.gradle
+
+# Built/generated files
+bin/
+gen/
+out/
+build/
+.externalNativeBuild
+!src/**/build/
+**/build/
+
+# iOS specific files
+Podfile.lock
+**/Pods/
+*.podspec
+!**/iosMain/**/*.podspec
+xcuserdata
+xcshareddata/WorkspaceSettings.xcsettings
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+
+# Kotlin specific
+.kotlin
+kotlin-js-store
+
+# Android Studio captures folder
+captures/
+
+# Other sandbox and temporary files
+_sandbox
+.fleet
+
