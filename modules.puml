@@ -1,0 +1,364 @@
+@startuml
+
+!define CoreBG #d1e7dd
+!define CoreBorder #0f5132
+!define DataBG #cff4fc
+!define DataBorder #055160
+!define DomainBG #f8d7da
+!define DomainBorder #842029
+!define PresentationBG #e7d8f0
+!define PresentationBorder #6b3fa0
+!define ApplicationBG #fff3cd
+!define ApplicationBorder #664d03
+!define FeatureBG #d0ebff
+!define FeatureBorder #084298
+!define DIBG #58edda
+!define DIBorder #007f73
+
+!define ArrowCore #0f5132
+!define ArrowData #055160
+!define ArrowDomain #842029
+!define ArrowPresentation #6b3fa0
+!define ArrowDI #007f73
+
+skinparam linetype ortho
+left to right direction
+
+skinparam package {
+    BackgroundColor<<Core>> CoreBG
+    BorderColor<<Core>> CoreBorder
+    BackgroundColor<<Data>> DataBG
+    BorderColor<<Data>> DataBorder
+    BackgroundColor<<Domain>> DomainBG
+    BorderColor<<Domain>> DomainBorder
+    BackgroundColor<<Presentation>> PresentationBG
+    BorderColor<<Presentation>> PresentationBorder
+    BackgroundColor<<Application>> ApplicationBG
+    BorderColor<<Application>> ApplicationBorder
+    BackgroundColor<<Feature>> FeatureBG
+    BorderColor<<Feature>> FeatureBorder
+    BackgroundColor<<DI>> DIBG
+    BorderColor<<DI>> DIBorder
+}
+
+package "Application" <<Application>> {
+    class Modules
+}
+
+package "Core" <<Core>> {
+    package "Network" <<Core>> {
+        class NetworkClient
+        class APIClient
+    }
+    package "Datastore" <<Core>> {
+        class LocalStorage
+        class Preferences
+    }
+    package "Database" <<Core>> {
+        class AppDatabase
+        class DAO
+    }
+    package "DesignSystem" <<Core>> {
+        class Components
+        class Themes
+    }
+}
+
+package "FeatureAuth" <<Feature>> {
+    package "Presentation" <<Presentation>> {
+        class AuthScreens
+        class AuthViewModels
+        class AuthComponents
+    }
+
+    package "Domain" <<Domain>> {
+        class AuthModel
+        class AuthUseCase
+        class AuthRepository {
+            +cleanAuthData()
+
+            +setAccessToken(token: String)
+            +setRefreshToken(token: String)
+
+            +getAccessToken(): String?
+            +getRefreshToken(): String?
+
+            +isUserAuthorized(): Boolean
+            +observeAuthErrors(): Flow<AuthError>
+        }
+    }
+
+    package "Data" <<Data>> {
+        class AuthRepositoryImpl
+        class AuthDataSource
+        class AuthErrorDataSourceImpl
+    }
+
+    package DI <<DI>> {
+        class AuthModules
+    }
+
+    DI -[ArrowDomain]-> Domain
+    DI -[ArrowPresentation]-> Presentation
+    DI -[ArrowData]-> Data
+    Presentation -[ArrowDomain]-> Domain
+    Data.AuthRepositoryImpl -[ArrowDomain]-> Domain.AuthRepository
+}
+
+'package "FeatureOnboarding" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+'
+'package "FeatureMain" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+'
+'package "FeatureCourses" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+'
+'package "FeatureDetailCourse" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+'
+'package "FeatureFavorites" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+'
+'package "FeatureProfile" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+'
+'package "FeatureNotifications" <<Feature>> {
+'    package "Presentation" <<Presentation>> {
+'        class Screens
+'        class ViewModels
+'        class Components
+'    }
+'
+'    package "Domain" <<Domain>> {
+'        class Model
+'        class UseCase
+'        class Repository
+'    }
+'
+'    package "Data" <<Data>> {
+'        class RepositoryImpl
+'        class DataSource
+'    }
+'
+'    package DI <<DI>> {
+'        class Modules
+'    }
+'
+'    DI -[ArrowDomain]-> Domain
+'    DI -[ArrowPresentation]-> Presentation
+'    DI -[ArrowData]-> Data
+'    Presentation -[ArrowDomain]-> Domain
+'    Data -[ArrowDomain]-> Domain
+'}
+
+' Связи Application с Core и FeatureAuth
+Application -[ArrowCore]-> Core.DesignSystem
+Application.Modules -[ArrowDI]-> FeatureAuth.DI
+Application.Modules -[ArrowDI]-> FeatureOnboarding.DI
+Application.Modules -[ArrowDI]-> FeatureMain.DI
+Application.Modules -[ArrowDI]-> FeatureCourses.DI
+Application.Modules -[ArrowDI]-> FeatureDetailCourse.DI
+Application.Modules -[ArrowDI]-> FeatureFavorites.DI
+Application.Modules -[ArrowDI]-> FeatureProfile.DI
+Application.Modules -[ArrowDI]-> FeatureNotifications.DI
+
+' Связи FeatureAuth с Core
+FeatureAuth.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+FeatureAuth.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+FeatureAuth.Data -[ArrowCore]-> Core.Database.AppDatabase
+FeatureAuth.Data -[ArrowCore]-> Core.Network.APIClient
+
+'' Связи других фич с Core
+'FeatureOnboarding.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureOnboarding.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureOnboarding.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureOnboarding.Data -[ArrowCore]-> Core.Network.APIClient
+'
+'FeatureMain.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureMain.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureMain.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureMain.Data -[ArrowCore]-> Core.Network.APIClient
+'
+'FeatureCourses.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureCourses.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureCourses.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureCourses.Data -[ArrowCore]-> Core.Network.APIClient
+'
+'FeatureDetailCourse.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureDetailCourse.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureDetailCourse.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureDetailCourse.Data -[ArrowCore]-> Core.Network.APIClient
+'
+'FeatureFavorites.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureFavorites.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureFavorites.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureFavorites.Data -[ArrowCore]-> Core.Network.APIClient
+'
+'FeatureProfile.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureProfile.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureProfile.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureProfile.Data -[ArrowCore]-> Core.Network.APIClient
+'
+'FeatureNotifications.Presentation -[ArrowCore]-> Core.DesignSystem.Components
+'FeatureNotifications.Data -[ArrowCore]-> Core.Datastore.LocalStorage
+'FeatureNotifications.Data -[ArrowCore]-> Core.Database.AppDatabase
+'FeatureNotifications.Data -[ArrowCore]-> Core.Network.APIClient
+
+@enduml
