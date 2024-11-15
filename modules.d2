@@ -1,124 +1,260 @@
+# Стили
+vars: {
+  colors: {
+    defaultFill: "#f9f9f9"
+    defaultStroke: "#333"
+
+    coreFill: "#d1e7dd"
+    coreStroke: "#0f5132"
+
+    dataFill: "#cff4fc"
+    dataStroke: "#055160"
+
+    domainFill: "#f8d7da"
+    domainStroke: "#842029"
+
+    presentationFill: "#e7d8f0"
+    presentationStroke: "#6b3fa0"
+
+    applicationFill: "#fff3cd"
+    applicationStroke: "#664d03"
+
+    featureFill: "#d0ebff"
+    featureStroke: "#084298"
+
+    diFill: "#58edda"
+    diStroke: "#007f73"
+
+    defaultArrow: "#555"
+  }
+  stroke: {
+    width: 2
+  }
+  radius: {
+    medium: 6
+  }
+}
+
+***.shape: rectangle
+***.style: {
+  "stroke-width": ${stroke.width}
+  "border-radius": ${radius.medium}
+}
+
 classes: {
-  rectangle: {
-    shape: rectangle
-
+  DomainDependencyArrow: {
     style: {
-      fill: "#f9f9f9"
+      stroke: ${colors.domainStroke}
+    }
+  }
 
-      stroke: "#333"
+  DataDependencyArrow: {
+    style: {
+      stroke: ${colors.dataStroke}
+    }
+  }
 
-      "stroke-width": 2
+  DependencyInjectionArrow: {
+    style: {
+      stroke: ${colors.diStroke}
+    }
+  }
 
-      "border-radius": 4
+  PresentationDependencyArrow: {
+    style: {
+      stroke: ${colors.presentationStroke}
     }
   }
 
   CoreDependencyArrow: {
     style: {
-      stroke: "#00f"
-
-      "stroke-width": 2
+      stroke: ${colors.coreStroke}
     }
   }
 
-  DomainDependencyArrow: {
+  DependencyInjectionStyle: {
     style: {
-      stroke: "#f00"
-
-      "stroke-width": 2
+      fill: ${colors.diFill}
+      stroke: ${colors.diStroke}
     }
   }
 
-  DefaultArrow: {
+  DomainStyle: {
     style: {
-      stroke: "#555"
-
-      "stroke-width": 2
+      fill: ${colors.domainFill}
+      stroke: ${colors.domainStroke}
     }
   }
 
-  CoreLayerStyle: {
-    shape: rectangle
-
+  DataStyle: {
     style: {
-      fill: "#d1e7dd"
-
-      stroke: "#0f5132"
-
-      "stroke-width": 2
-
-      "border-radius": 6
+      fill: ${colors.dataFill}
+      stroke: ${colors.dataStroke}
     }
   }
 
-  DataLayerStyle: {
-    shape: rectangle
-
+  PresentationStyle: {
     style: {
-      fill: "#cff4fc"
-
-      stroke: "#055160"
-
-      "stroke-width": 2
-
-      "border-radius": 6
+      fill: ${colors.presentationFill}
+      stroke: ${colors.presentationStroke}
     }
   }
 
-  DomainLayerStyle: {
-    shape: rectangle
-
+  CoreStyle: {
     style: {
-      fill: "#f8d7da"
-
-      stroke: "#842029"
-
-      "stroke-width": 2
-
-      "border-radius": 6
+      fill: ${colors.coreFill}
+      stroke: ${colors.coreStroke}
     }
   }
 
-  ApplicationLayerStyle: {
-    shape: rectangle
-
+  ApplicationStyle: {
     style: {
-      fill: "#fff3cd"
-
-      stroke: "#664d03"
-
-      "stroke-width": 2
-
-      "border-radius": 6
+      fill: ${colors.applicationFill}
+      stroke: ${colors.applicationStroke}
     }
   }
 
-  FeatureLayerStyle: {
-    shape: rectangle
-
+  FeatureStyle: {
     style: {
-      fill: "#d0ebff"
-
-      stroke: "#084298"
-
-      "stroke-width": 2
-
-      "border-radius": 6
-    }
-  }
-
-  SharedLayerStyle: {
-    shape: rectangle
-
-    style: {
-      fill: "#e2e3e5"
-
-      stroke: "#41464b"
-
-      "stroke-width": 2
-
-      "border-radius": 6
+      fill: ${colors.featureFill}
+      stroke: ${colors.featureStroke}
     }
   }
 }
 
+# Слои
+core: {
+  class: CoreStyle
+
+  network: {
+    di.class: DependencyInjectionStyle
+  }
+  datastore: {
+    di.class: DependencyInjectionStyle
+  }
+  database: {
+    di.class: DependencyInjectionStyle
+  }
+  designsystem
+}
+
+application: {
+  class: ApplicationStyle
+
+  modules
+}
+
+feature: {
+  class: FeatureStyle
+
+  auth: {
+    presentation: {
+      class: PresentationStyle
+
+      screens
+      viewmodels
+      components
+    }
+    domain: {
+      class: DomainStyle
+
+      model
+      usecase
+      repository
+    }
+    data: {
+      class: DataStyle
+
+      repository-impl
+      datasource
+    }
+
+    # зависимости внутри модуля
+    di: {
+      class: DependencyInjectionStyle
+    }
+    di -> domain: {
+      class: DomainDependencyArrow
+    }
+    di -> presentation: {
+      class: PresentationDependencyArrow
+    }
+    di -> data: {
+      class: DataDependencyArrow
+    }
+    presentation -> domain: {
+      class: DomainDependencyArrow
+    }
+    data -> domain: {
+      class: DomainDependencyArrow
+    }
+  }
+  onboarding: {
+    presentation.class: PresentationStyle
+    domain.class: DomainStyle
+    data.class: DataStyle
+  }
+  # main: {
+  #   presentation.class: PresentationStyle
+  #   domain.class: DomainStyle
+  #   data.class: DataStyle
+  # }
+  # courses: {
+  #   presentation.class: PresentationStyle
+  #   domain.class: DomainStyle
+  #   data.class: DataStyle
+  # }
+  # detail-course: {
+  #   presentation.class: PresentationStyle
+  #   domain.class: DomainStyle
+  #   data.class: DataStyle
+  # }
+  # favorites: {
+  #   presentation.class: PresentationStyle
+  #   domain.class: DomainStyle
+  #   data.class: DataStyle
+  # }
+  # profile: {
+  #   presentation.class: PresentationStyle
+  #   domain.class: DomainStyle
+  #   data.class: DataStyle
+  # }
+  # notifications: {
+  #   presentation.class: PresentationStyle
+  #   domain.class: DomainStyle
+  #   data.class: DataStyle
+  # }
+}
+
+# зависимости feature-модуля
+# auth
+feature.auth.presentation -> core.designsystem: {
+  class: CoreDependencyArrow
+}
+feature.auth.data -> core.datastore: {
+  class: CoreDependencyArrow
+}
+feature.auth.data -> core.database: {
+  class: CoreDependencyArrow
+}
+feature.auth.data -> core.network: {
+  class: CoreDependencyArrow
+}
+#
+
+# зависимости application-модуля
+application -> core.designsystem: {
+  class: CoreDependencyArrow
+}
+application.modules -> feature.auth.di: {
+  class: DependencyInjectionArrow
+}
+application.modules -> core.network.di: {
+  class: CoreDependencyArrow
+}
+application.modules -> core.datastore.di: {
+  class: CoreDependencyArrow
+}
+application.modules -> core.database.di: {
+  class: CoreDependencyArrow
+}
