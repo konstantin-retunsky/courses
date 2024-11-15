@@ -42,56 +42,88 @@ skinparam package {
 }
 
 package "Application" <<Application>> {
-    class Modules
+    class Modules <<internal>>
+    class Navigation <<internal>>
 }
 
 package "Core" <<Core>> {
     package "Network" <<Core>> {
-        class NetworkClient
-        class APIClient
+        interface HttpClient {
+            suspend fun <T> get(endpoint: String, headers: Map<String, String>)
+            suspend fun <T> post(endpoint: String, body: Any, headers: Map<String, String>)
+            suspend fun <T> put(endpoint: String, body: Any, headers: Map<String, String>)
+            suspend fun <T> delete(endpoint: String, headers: Map<String, String>)
+            suspend fun <T> patch(endpoint: String, body: Any, headers: Map<String, String>)
+        }
+        class HttpClientImpl <<internal>>
+        class AuthRefreshFeature <<internal>>
     }
     package "Datastore" <<Core>> {
-        class LocalStorage
-        class Preferences
+        interface LocalStorage {
+            fun setString(key: String, value: String)
+            fun getString(key: String): String?
+            fun setInt(key: String, value: Int)
+            fun getInt(key: String): Int?
+            fun setBoolean(key: String, value: Boolean)
+            fun getBoolean(key: String): Boolean?
+            fun setFloat(key: String, value: Float)
+            fun getFloat(key: String): Float?
+            fun setLong(key: String, value: Long)
+            fun getLong(key: String): Long?
+            fun setDouble(key: String, value: Double)
+            fun getDouble(key: String): Double?
+            fun remove(key: String)
+        }
+        class LocalStorageImpl <<internal>>
+
+        class AuthTokenDataSourceImpl <<internal>>
     }
     package "Database" <<Core>> {
-        class AppDatabase
-        class DAO
+        interface AppDatabase
+        class AppDatabaseImpl <<internal>>
     }
     package "DesignSystem" <<Core>> {
         class Components
         class Themes
     }
+
+    Core.Network.HttpClientImpl -[ArrowCore]-> Core.Network.HttpClient
+    Core.Datastore.LocalStorageImpl -[ArrowCore]-> Core.Datastore.LocalStorage
+    Core.Database.AppDatabaseImpl -[ArrowCore]-> Core.Database.AppDatabase
 }
 
 package "FeatureAuth" <<Feature>> {
     package "Presentation" <<Presentation>> {
-        class AuthScreens
-        class AuthViewModels
-        class AuthComponents
+        class AuthScreens <<internal>>
+        class AuthViewModels <<internal>>
+        class AuthComponents <<internal>>
+        class Navigation
     }
 
     package "Domain" <<Domain>> {
-        class AuthModel
-        class AuthUseCase
-        class AuthRepository {
-            +cleanAuthData()
+        class AuthError
+        interface AuthTokenDataSource
+        interface AuthRepository {
+            cleanAuthData()
 
-            +setAccessToken(token: String)
-            +setRefreshToken(token: String)
+            setAccessToken(token: String)
+            setRefreshToken(token: String)
 
-            +getAccessToken(): String?
-            +getRefreshToken(): String?
+            getAccessToken(): String?
+            getRefreshToken(): String?
 
-            +isUserAuthorized(): Boolean
-            +observeAuthErrors(): Flow<AuthError>
+            isUserAuthorized(): Boolean
+            observeAuthErrors(): Flow<AuthError>
+        }
+        interface AuthErrorDataSource {
+            fun emitError(error: AuthError)
+            fun observeError(): Flow<AuthError>
         }
     }
 
     package "Data" <<Data>> {
-        class AuthRepositoryImpl
-        class AuthDataSource
-        class AuthErrorDataSourceImpl
+        class AuthRepositoryImpl <<internal>>
+        class AuthErrorDataSourceImpl <<internal>>
     }
 
     package DI <<DI>> {
@@ -102,263 +134,34 @@ package "FeatureAuth" <<Feature>> {
     DI -[ArrowPresentation]-> Presentation
     DI -[ArrowData]-> Data
     Presentation -[ArrowDomain]-> Domain
+
     Data.AuthRepositoryImpl -[ArrowDomain]-> Domain.AuthRepository
+    Data.AuthRepositoryImpl -[ArrowDomain]-> FeatureAuth.Domain.AuthTokenDataSource
+    Data.AuthRepositoryImpl -[ArrowDomain]-> FeatureAuth.Domain.AuthErrorDataSource
+
+    Data.AuthErrorDataSourceImpl -[ArrowDomain]-> Domain.AuthErrorDataSource
+    Domain.AuthRepository ..> Domain.AuthError
 }
 
-'package "FeatureOnboarding" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
-'
-'package "FeatureMain" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
-'
-'package "FeatureCourses" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
-'
-'package "FeatureDetailCourse" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
-'
-'package "FeatureFavorites" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
-'
-'package "FeatureProfile" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
-'
-'package "FeatureNotifications" <<Feature>> {
-'    package "Presentation" <<Presentation>> {
-'        class Screens
-'        class ViewModels
-'        class Components
-'    }
-'
-'    package "Domain" <<Domain>> {
-'        class Model
-'        class UseCase
-'        class Repository
-'    }
-'
-'    package "Data" <<Data>> {
-'        class RepositoryImpl
-'        class DataSource
-'    }
-'
-'    package DI <<DI>> {
-'        class Modules
-'    }
-'
-'    DI -[ArrowDomain]-> Domain
-'    DI -[ArrowPresentation]-> Presentation
-'    DI -[ArrowData]-> Data
-'    Presentation -[ArrowDomain]-> Domain
-'    Data -[ArrowDomain]-> Domain
-'}
+Core.Datastore.AuthTokenDataSourceImpl -[ArrowData]-> FeatureAuth.Domain.AuthTokenDataSource
+Core.Network.AuthRefreshFeature -[ArrowCore]-> Core.Network.HttpClient
+Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.TokenProvider
+Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.AuthErrorHandler
+Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.RefreshTokenService
 
-' Связи Application с Core и FeatureAuth
 Application -[ArrowCore]-> Core.DesignSystem
-Application.Modules -[ArrowDI]-> FeatureAuth.DI
-Application.Modules -[ArrowDI]-> FeatureOnboarding.DI
-Application.Modules -[ArrowDI]-> FeatureMain.DI
-Application.Modules -[ArrowDI]-> FeatureCourses.DI
-Application.Modules -[ArrowDI]-> FeatureDetailCourse.DI
-Application.Modules -[ArrowDI]-> FeatureFavorites.DI
-Application.Modules -[ArrowDI]-> FeatureProfile.DI
-Application.Modules -[ArrowDI]-> FeatureNotifications.DI
+Application.Modules -[ArrowDI]-> FeatureAuth.DI.AuthModules
+Application.Navigation -[ArrowDI]-> FeatureAuth.Presentation.Navigation
 
-' Связи FeatureAuth с Core
 FeatureAuth.Presentation -[ArrowCore]-> Core.DesignSystem.Components
 FeatureAuth.Data -[ArrowCore]-> Core.Datastore.LocalStorage
 FeatureAuth.Data -[ArrowCore]-> Core.Database.AppDatabase
-FeatureAuth.Data -[ArrowCore]-> Core.Network.APIClient
+FeatureAuth.Data -[ArrowCore]-> Core.Network.HttpClient
 
-'' Связи других фич с Core
-'FeatureOnboarding.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureOnboarding.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureOnboarding.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureOnboarding.Data -[ArrowCore]-> Core.Network.APIClient
-'
-'FeatureMain.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureMain.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureMain.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureMain.Data -[ArrowCore]-> Core.Network.APIClient
-'
-'FeatureCourses.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureCourses.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureCourses.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureCourses.Data -[ArrowCore]-> Core.Network.APIClient
-'
-'FeatureDetailCourse.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureDetailCourse.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureDetailCourse.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureDetailCourse.Data -[ArrowCore]-> Core.Network.APIClient
-'
-'FeatureFavorites.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureFavorites.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureFavorites.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureFavorites.Data -[ArrowCore]-> Core.Network.APIClient
-'
-'FeatureProfile.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureProfile.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureProfile.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureProfile.Data -[ArrowCore]-> Core.Network.APIClient
-'
-'FeatureNotifications.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-'FeatureNotifications.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-'FeatureNotifications.Data -[ArrowCore]-> Core.Database.AppDatabase
-'FeatureNotifications.Data -[ArrowCore]-> Core.Network.APIClient
+FeatureAuth.Data -[ArrowDomain]-> FeatureAuth.Domain.AuthTokenDataSource
+FeatureAuth.Data -[ArrowDomain]-> FeatureAuth.Domain.AuthErrorDataSource
+
+Application.Modules -[ArrowDI]-> FeatureAuth.DI.AuthModules
+Application -[ArrowCore]-> Core.Network.HttpClientImpl
 
 @enduml
