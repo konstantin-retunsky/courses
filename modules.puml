@@ -87,9 +87,9 @@ package "Core" <<Core>> {
         class Themes
     }
 
-    Core.Network.HttpClientImpl -[ArrowCore]-> Core.Network.HttpClient
-    Core.Datastore.LocalStorageImpl -[ArrowCore]-> Core.Datastore.LocalStorage
-    Core.Database.AppDatabaseImpl -[ArrowCore]-> Core.Database.AppDatabase
+    Core.Network.HttpClientImpl -[ArrowCore]|> Core.Network.HttpClient
+    Core.Datastore.LocalStorageImpl -[ArrowCore]|> Core.Datastore.LocalStorage
+    Core.Database.AppDatabaseImpl -[ArrowCore]|> Core.Database.AppDatabase
 }
 
 package "FeatureAuth" <<Feature>> {
@@ -135,21 +135,22 @@ package "FeatureAuth" <<Feature>> {
     DI -[ArrowData]-> Data
     Presentation -[ArrowDomain]-> Domain
 
-    Data.AuthRepositoryImpl -[ArrowDomain]-> Domain.AuthRepository
-    Data.AuthRepositoryImpl -[ArrowDomain]-> FeatureAuth.Domain.AuthTokenDataSource
-    Data.AuthRepositoryImpl -[ArrowDomain]-> FeatureAuth.Domain.AuthErrorDataSource
+    Data.AuthRepositoryImpl -[ArrowDomain]|> Domain.AuthRepository
+    Data.AuthRepositoryImpl -[ArrowDomain]|> FeatureAuth.Domain.AuthTokenDataSource
+    Data.AuthRepositoryImpl -[ArrowDomain]|> FeatureAuth.Domain.AuthErrorDataSource
 
-    Data.AuthErrorDataSourceImpl -[ArrowDomain]-> Domain.AuthErrorDataSource
+    Data.AuthErrorDataSourceImpl -[ArrowDomain]|> Domain.AuthErrorDataSource
     Domain.AuthRepository ..> Domain.AuthError
 }
 
-Core.Datastore.AuthTokenDataSourceImpl -[ArrowData]-> FeatureAuth.Domain.AuthTokenDataSource
+Core.Datastore.AuthTokenDataSourceImpl -[ArrowData]|> FeatureAuth.Domain.AuthTokenDataSource
 Core.Network.AuthRefreshFeature -[ArrowCore]-> Core.Network.HttpClient
 Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.TokenProvider
 Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.AuthErrorHandler
 Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.RefreshTokenService
 
 Application -[ArrowCore]-> Core.DesignSystem
+Application -[ArrowCore]-> Core.Network.HttpClient
 Application.Modules -[ArrowDI]-> FeatureAuth.DI.AuthModules
 Application.Navigation -[ArrowDI]-> FeatureAuth.Presentation.Navigation
 
@@ -160,8 +161,5 @@ FeatureAuth.Data -[ArrowCore]-> Core.Network.HttpClient
 
 FeatureAuth.Data -[ArrowDomain]-> FeatureAuth.Domain.AuthTokenDataSource
 FeatureAuth.Data -[ArrowDomain]-> FeatureAuth.Domain.AuthErrorDataSource
-
-Application.Modules -[ArrowDI]-> FeatureAuth.DI.AuthModules
-Application -[ArrowCore]-> Core.Network.HttpClientImpl
 
 @enduml
