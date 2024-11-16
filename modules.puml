@@ -14,7 +14,6 @@
 !define FeatureBorder #084298
 !define DIBG #58edda
 !define DIBorder #007f73
-
 !define ArrowCore #0f5132
 !define ArrowData #055160
 !define ArrowDomain #842029
@@ -25,29 +24,36 @@ skinparam linetype ortho
 left to right direction
 
 skinparam package {
-    BackgroundColor<<Core>> CoreBG
-    BorderColor<<Core>> CoreBorder
-    BackgroundColor<<Data>> DataBG
-    BorderColor<<Data>> DataBorder
-    BackgroundColor<<Domain>> DomainBG
-    BorderColor<<Domain>> DomainBorder
-    BackgroundColor<<Presentation>> PresentationBG
-    BorderColor<<Presentation>> PresentationBorder
-    BackgroundColor<<Application>> ApplicationBG
-    BorderColor<<Application>> ApplicationBorder
-    BackgroundColor<<Feature>> FeatureBG
-    BorderColor<<Feature>> FeatureBorder
-    BackgroundColor<<DI>> DIBG
-    BorderColor<<DI>> DIBorder
+    BackgroundColor<<core>> CoreBG
+    BorderColor<<core>> CoreBorder
+    BackgroundColor<<data>> DataBG
+    BorderColor<<data>> DataBorder
+    BackgroundColor<<domain>> DomainBG
+    BorderColor<<domain>> DomainBorder
+    BackgroundColor<<presentation>> PresentationBG
+    BorderColor<<presentation>> PresentationBorder
+    BackgroundColor<<application>> ApplicationBG
+    BorderColor<<application>> ApplicationBorder
+    BackgroundColor<<feature>> FeatureBG
+    BorderColor<<feature>> FeatureBorder
+    BackgroundColor<<di>> DIBG
+    BorderColor<<di>> DIBorder
 }
 
-package "Application" <<Application>> {
-    class Modules <<internal>>
-    class Navigation <<internal>>
+package "application" <<application>> {
+    class Application <<internal>>
+
+    package "navigation" <<internal>> {
+        class AppNavigation
+    }
+
+    package "di" <<di>> {
+        class AppModules <<internal>>
+    }
 }
 
-package "Core" <<Core>> {
-    package "Network" <<Core>> {
+package "core" <<core>> {
+    package "network" <<core>> {
         interface HttpClient {
             suspend fun <T> get(endpoint: String, headers: Map<String, String>)
             suspend fun <T> post(endpoint: String, body: Any, headers: Map<String, String>)
@@ -57,8 +63,9 @@ package "Core" <<Core>> {
         }
         class HttpClientImpl <<internal>>
         class AuthRefreshFeature <<internal>>
+        class DiModule
     }
-    package "Datastore" <<Core>> {
+    package "datastore" <<core>> {
         interface LocalStorage {
             fun setString(key: String, value: String)
             fun getString(key: String): String?
@@ -75,91 +82,125 @@ package "Core" <<Core>> {
             fun remove(key: String)
         }
         class LocalStorageImpl <<internal>>
-
-        class AuthTokenDataSourceImpl <<internal>>
+        class DiModule
     }
-    package "Database" <<Core>> {
+    package "database" <<core>> {
         interface AppDatabase
         class AppDatabaseImpl <<internal>>
+        class DiModule
     }
-    package "DesignSystem" <<Core>> {
-        class Components
-        class Themes
+    package "designsystem" <<core>> {
+        package "components" <<internal>> {
+        }
+        package "themes" <<internal>> {
+        }
     }
 
-    Core.Network.HttpClientImpl -[ArrowCore]|> Core.Network.HttpClient
-    Core.Datastore.LocalStorageImpl -[ArrowCore]|> Core.Datastore.LocalStorage
-    Core.Database.AppDatabaseImpl -[ArrowCore]|> Core.Database.AppDatabase
+    core.network.HttpClientImpl .[ArrowCore].|> core.network.HttpClient
+    core.datastore.LocalStorageImpl .[ArrowCore].|> core.datastore.LocalStorage
+    core.database.AppDatabaseImpl .[ArrowCore].|> core.database.AppDatabase
+
+    core.network.DiModule .[ArrowDI].> core.network.HttpClient
+    core.datastore.DiModule .[ArrowDI].> core.datastore.LocalStorage
+    core.database.DiModule .[ArrowDI].> core.database.AppDatabase
 }
 
-package "FeatureAuth" <<Feature>> {
-    package "Presentation" <<Presentation>> {
+package "featureauth" <<feature>> {
+    package "presentation" <<presentation>> {
         class AuthScreens <<internal>>
         class AuthViewModels <<internal>>
-        class AuthComponents <<internal>>
+        class Components <<internal>>
         class Navigation
     }
 
-    package "Domain" <<Domain>> {
-        class AuthError
-        interface AuthTokenDataSource
-        interface AuthRepository {
-            cleanAuthData()
-
-            setAccessToken(token: String)
-            setRefreshToken(token: String)
-
-            getAccessToken(): String?
-            getRefreshToken(): String?
-
-            isUserAuthorized(): Boolean
-            observeAuthErrors(): Flow<AuthError>
+    package "domain" <<domain>> {
+        package "usecases" <<internal>> {
+            class CleanLocalUserDataUseCase
         }
-        interface AuthErrorDataSource {
-            fun emitError(error: AuthError)
-            fun observeError(): Flow<AuthError>
+
+        package "models" <<internal>> {
+            class AuthError
+        }
+
+        package "repositories" <<internal>> {
+            interface AuthRepository {
+                cleanAuthData()
+
+                setAccessToken(token: String)
+                setRefreshToken(token: String)
+
+                getAccessToken(): String?
+                getRefreshToken(): String?
+
+                isUserAuthorized(): Boolean
+                observeAuthErrors(): Flow<AuthError>
+            }
+        }
+
+        package "datasource" {
+            interface AuthTokenDataSource
+
+            interface AuthErrorDataSource {
+                fun emitError(error: AuthError)
+                fun observeError(): Flow<AuthError>
+            }
         }
     }
 
-    package "Data" <<Data>> {
-        class AuthRepositoryImpl <<internal>>
-        class AuthErrorDataSourceImpl <<internal>>
+    package "data" <<data>> <<internal>> {
+        package "repositories"  {
+            class AuthRepositoryImpl {
+                - authTokenDataSource: AuthTokenDataSource
+                - authErrorDataSource: AuthErrorDataSource
+            }
+        }
+        package "datasource" {
+            class AuthErrorDataSourceImpl
+            class AuthTokenDataSourceImpl
+        }
+        package "refresh" {
+            class AuthRefreshFeatureImpl {
+                -refreshTokenDataSource: KtorRefreshTokenDataSource
+                -authTokenDataSource: AuthTokenDataSource
+                -authErrorDataSource: AuthErrorDataSource
+                -json: Json
+                -cleanLocalUserDataUseCase: CleanLocalUserDataUseCase
+            }
+        }
     }
 
-    package DI <<DI>> {
+    package "di" <<di>> {
         class AuthModules
     }
 
-    DI -[ArrowDomain]-> Domain
-    DI -[ArrowPresentation]-> Presentation
-    DI -[ArrowData]-> Data
-    Presentation -[ArrowDomain]-> Domain
+    di .[ArrowDomain].> domain
+    di .[ArrowPresentation].> presentation
+    di .[ArrowData].> data
+    presentation .[ArrowDomain].> domain
 
-    Data.AuthRepositoryImpl -[ArrowDomain]|> Domain.AuthRepository
-    Data.AuthRepositoryImpl -[ArrowDomain]|> FeatureAuth.Domain.AuthTokenDataSource
-    Data.AuthRepositoryImpl -[ArrowDomain]|> FeatureAuth.Domain.AuthErrorDataSource
+    data.repositories.AuthRepositoryImpl .[ArrowDomain].|> domain.repositories.AuthRepository
+    data.repositories.AuthRepositoryImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
+    data.repositories.AuthRepositoryImpl o-[ArrowDomain]- domain.datasource.AuthErrorDataSource
 
-    Data.AuthErrorDataSourceImpl -[ArrowDomain]|> Domain.AuthErrorDataSource
-    Domain.AuthRepository ..> Domain.AuthError
+    data.datasource.AuthErrorDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthErrorDataSource
+    data.datasource.AuthTokenDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthTokenDataSource
+
+    domain.datasource.AuthErrorDataSource .[ArrowDomain].> domain.models.AuthError
+    domain.repositories.AuthRepository .[ArrowDomain].> domain.models.AuthError
+    domain.repositories.AuthRepository .[ArrowDomain].> domain.usecases.CleanLocalUserDataUseCase
+
+    data.refresh.AuthRefreshFeatureImpl .[ArrowDomain].|> domain.usecases.CleanLocalUserDataUseCase
 }
 
-Core.Datastore.AuthTokenDataSourceImpl -[ArrowData]|> FeatureAuth.Domain.AuthTokenDataSource
-Core.Network.AuthRefreshFeature -[ArrowCore]-> Core.Network.HttpClient
-Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.TokenProvider
-Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.AuthErrorHandler
-Core.Network.AuthRefreshFeature -[ArrowDomain]-> Core.Network.RefreshTokenService
+application.Application .[ArrowCore].> core.designsystem
 
-Application -[ArrowCore]-> Core.DesignSystem
-Application -[ArrowCore]-> Core.Network.HttpClient
-Application.Modules -[ArrowDI]-> FeatureAuth.DI.AuthModules
-Application.Navigation -[ArrowDI]-> FeatureAuth.Presentation.Navigation
+application.navigation.AppNavigation .[ArrowPresentation].> featureauth.presentation.Navigation
 
-FeatureAuth.Presentation -[ArrowCore]-> Core.DesignSystem.Components
-FeatureAuth.Data -[ArrowCore]-> Core.Datastore.LocalStorage
-FeatureAuth.Data -[ArrowCore]-> Core.Database.AppDatabase
-FeatureAuth.Data -[ArrowCore]-> Core.Network.HttpClient
+application.di.AppModules .[ArrowDI].> featureauth.di.AuthModules
+application.di.AppModules .[ArrowDI].> core.network.DiModule
+application.di.AppModules .[ArrowDI].> core.datastore.DiModule
+application.di.AppModules .[ArrowDI].> core.database.DiModule
 
-FeatureAuth.Data -[ArrowDomain]-> FeatureAuth.Domain.AuthTokenDataSource
-FeatureAuth.Data -[ArrowDomain]-> FeatureAuth.Domain.AuthErrorDataSource
+featureauth.presentation .[ArrowCore].> core.designsystem
 
 @enduml
