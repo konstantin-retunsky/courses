@@ -116,6 +116,7 @@ package "featureauth" <<feature>> {
     package "domain" <<domain>> {
         package "usecases" <<internal>> {
             class CleanLocalUserDataUseCase
+            class RefreshAccessTokenUseCase
         }
 
         package "models" <<internal>> {
@@ -210,6 +211,9 @@ package "featureauth" <<feature>> {
     domain.models.AuthError .[ArrowDomain].> domain.models.AuthErrorType
     domain.datasource.AuthErrorDataSource .[ArrowDomain].> domain.models.AuthError
     domain.repositories.AuthRepository .[ArrowDomain].> domain.models.AuthError
+
+    domain.usecases.CleanLocalUserDataUseCase .[ArrowDomain].> domain.repositories.AuthRepository
+    domain.usecases.RefreshAccessTokenUseCase .[ArrowDomain].> domain.repositories.AuthRepository
 
     data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.usecases.CleanLocalUserDataUseCase
     data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
