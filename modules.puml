@@ -119,29 +119,42 @@ package "featureauth" <<feature>> {
         }
 
         package "models" <<internal>> {
-            class AuthError
+            class AuthError {
+                + type: AuthErrorType
+                + message: String
+            }
+            enum AuthErrorType {
+                RefreshTokenIsNotSpecified
+                InvalidRefreshToken
+                InvalidAccessToken
+                OAuthServiceUnavailable
+                UnknownAuthError
+            }
         }
 
         package "repositories" <<internal>> {
             interface AuthRepository {
-                cleanAuthData()
-
-                setAccessToken(token: String)
-                setRefreshToken(token: String)
-
-                getAccessToken(): String?
-                getRefreshToken(): String?
-
-                isUserAuthorized(): Boolean
-                observeAuthErrors(): Flow<AuthError>
+                fun cleanAuthData()
+                fun setAccessToken(token: String)
+                fun setRefreshToken(token: String)
+                fun getAccessToken(): String?
+                fun getRefreshToken(): String?
+                fun isUserAuthorized(): Boolean
+                suspend fun observeAuthErrors(): Flow<AuthError>
             }
         }
 
-        package "datasource" {
-            interface AuthTokenDataSource
+        package "datasource" <<domain>> {
+            interface AuthTokenDataSource {
+                fun isUserAuthorized(): Boolean
+                fun getAccessToken(): String?
+                fun getRefreshToken(): String?
+                fun setAccessToken(token: String)
+                fun setRefreshToken(token: String)
+            }
 
             interface AuthErrorDataSource {
-                fun emitError(error: AuthError)
+                fun emmitError(error: AuthError)
                 fun observeError(): Flow<AuthError>
             }
         }
@@ -152,19 +165,25 @@ package "featureauth" <<feature>> {
             class AuthRepositoryImpl {
                 - authTokenDataSource: AuthTokenDataSource
                 - authErrorDataSource: AuthErrorDataSource
+                - remoteDataSource: HttpClient
+                - settingsDataSource: SettingsAuthDataSource
             }
         }
+
         package "datasource" {
             class AuthErrorDataSourceImpl
             class AuthTokenDataSourceImpl
+            class SettingsAuthDataSource <<internal>>
+            class NetworkRefreshTokenDataSource <<internal>>
         }
+
         package "refresh" {
             class AuthRefreshFeatureImpl {
-                -refreshTokenDataSource: KtorRefreshTokenDataSource
+                -cleanLocalUserDataUseCase: CleanLocalUserDataUseCase
                 -authTokenDataSource: AuthTokenDataSource
                 -authErrorDataSource: AuthErrorDataSource
+                -refreshTokenDataSource: NetworkRefreshTokenDataSource
                 -json: Json
-                -cleanLocalUserDataUseCase: CleanLocalUserDataUseCase
             }
         }
     }
@@ -185,11 +204,18 @@ package "featureauth" <<feature>> {
     data.datasource.AuthErrorDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthErrorDataSource
     data.datasource.AuthTokenDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthTokenDataSource
 
+    domain.models.AuthError .[ArrowDomain].> domain.models.AuthErrorType
     domain.datasource.AuthErrorDataSource .[ArrowDomain].> domain.models.AuthError
     domain.repositories.AuthRepository .[ArrowDomain].> domain.models.AuthError
-    domain.repositories.AuthRepository .[ArrowDomain].> domain.usecases.CleanLocalUserDataUseCase
 
-    data.refresh.AuthRefreshFeatureImpl .[ArrowDomain].|> domain.usecases.CleanLocalUserDataUseCase
+    data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.usecases.CleanLocalUserDataUseCase
+    data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
+    data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthErrorDataSource
+    data.refresh.AuthRefreshFeatureImpl o-[ArrowData]- data.datasource.NetworkRefreshTokenDataSource
+
+    data.refresh.AuthRefreshFeatureImpl .[ArrowCore].|> core.network.AuthRefreshFeature
+
+    presentation .[ArrowCore].> core.designsystem
 }
 
 application.Application .[ArrowCore].> core.designsystem
