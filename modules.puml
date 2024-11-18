@@ -34,8 +34,8 @@ skinparam package {
     BorderColor<<presentation>> PresentationBorder
     BackgroundColor<<application>> ApplicationBG
     BorderColor<<application>> ApplicationBorder
-    BackgroundColor<<feature>> FeatureBG
-    BorderColor<<feature>> FeatureBorder
+    BackgroundColor<<features>> FeatureBG
+    BorderColor<<features>> FeatureBorder
     BackgroundColor<<di>> DIBG
     BorderColor<<di>> DIBorder
 }
@@ -105,134 +105,136 @@ package "core" <<core>> {
     core.database.DiModule .[ArrowDI].> core.database.AppDatabase
 }
 
-package "featureauth" <<feature>> {
-    package "presentation" <<presentation>> {
-        class AuthScreens <<internal>>
-        class AuthViewModels <<internal>>
-        class Components <<internal>>
-        class Navigation
+package "features" <<features>> {
+    package "auth" {
+        package "presentation" <<presentation>> {
+            class AuthScreens <<internal>>
+            class AuthViewModels <<internal>>
+            class Components <<internal>>
+            class Navigation
+        }
+
+        package "domain" <<domain>> {
+            package "usecases" <<internal>> {
+                class CleanLocalUserDataUseCase
+                class RefreshAccessTokenUseCase
+            }
+
+            package "models" <<internal>> {
+                class AuthError {
+                    + type: AuthErrorType
+                    + message: String
+                }
+                enum AuthErrorType {
+                    RefreshTokenIsNotSpecified
+                    InvalidRefreshToken
+                    InvalidAccessToken
+                    OAuthServiceUnavailable
+                    UnknownAuthError
+                }
+                class AuthDataModel {
+                    + accessToken: String
+                    + refreshToken: String
+                }
+            }
+
+            package "repositories" <<internal>> {
+                interface AuthRepository {
+                    fun cleanAuthData()
+                    fun setAccessToken(token: String)
+                    fun setRefreshToken(token: String)
+                    fun getAccessToken(): String?
+                    fun getRefreshToken(): String?
+                    fun isUserAuthorized(): Boolean
+                    suspend fun observeAuthErrors(): Flow<AuthError>
+                }
+            }
+
+            package "datasource" <<domain>> {
+                interface AuthTokenDataSource {
+                    fun isUserAuthorized(): Boolean
+                    fun getAccessToken(): String?
+                    fun getRefreshToken(): String?
+                    fun setAccessToken(token: String)
+                    fun setRefreshToken(token: String)
+                }
+
+                interface AuthErrorDataSource {
+                    fun emitError(error: AuthError)
+                    fun observeError(): Flow<AuthError>
+                }
+            }
+        }
+
+        package "data" <<data>> <<internal>> {
+            package "repositories"  {
+                class AuthRepositoryImpl {
+                    - authTokenDataSource: AuthTokenDataSource
+                    - authErrorDataSource: AuthErrorDataSource
+                    - remoteDataSource: HttpClient
+                }
+            }
+
+            package "datasource" {
+                class AuthErrorDataSourceImpl
+                class AuthTokenDataSourceImpl
+                class NetworkRefreshTokenDataSource <<internal>>
+            }
+
+            package "refresh" {
+                class AuthRefreshFeatureImpl {
+                    - cleanLocalUserDataUseCase: CleanLocalUserDataUseCase
+                    - authTokenDataSource: AuthTokenDataSource
+                    - authErrorDataSource: AuthErrorDataSource
+                    - refreshTokenDataSource: NetworkRefreshTokenDataSource
+                    - json: Json
+                }
+            }
+        }
+
+        package "di" <<di>> {
+            class AuthModules
+        }
+
+        di .[ArrowDomain].> domain
+        di .[ArrowPresentation].> presentation
+        di .[ArrowData].> data
+        presentation .[ArrowDomain].> domain
+
+        data.repositories.AuthRepositoryImpl .[ArrowDomain].|> domain.repositories.AuthRepository
+        data.repositories.AuthRepositoryImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
+        data.repositories.AuthRepositoryImpl o-[ArrowDomain]- domain.datasource.AuthErrorDataSource
+
+        data.datasource.AuthErrorDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthErrorDataSource
+        data.datasource.AuthTokenDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthTokenDataSource
+        data.datasource.AuthTokenDataSourceImpl .[ArrowDomain].> domain.models.AuthDataModel
+
+        domain.models.AuthError .[ArrowDomain].> domain.models.AuthErrorType
+        domain.datasource.AuthErrorDataSource .[ArrowDomain].> domain.models.AuthError
+        domain.repositories.AuthRepository .[ArrowDomain].> domain.models.AuthError
+
+        domain.usecases.CleanLocalUserDataUseCase .[ArrowDomain].> domain.repositories.AuthRepository
+        domain.usecases.RefreshAccessTokenUseCase .[ArrowDomain].> domain.repositories.AuthRepository
+
+        data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.usecases.CleanLocalUserDataUseCase
+        data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
+        data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthErrorDataSource
+        data.refresh.AuthRefreshFeatureImpl o-[ArrowData]- data.datasource.NetworkRefreshTokenDataSource
+        data.refresh.AuthRefreshFeatureImpl .[ArrowCore].|> core.network.AuthRefreshFeature
+
+        presentation .[ArrowCore].> core.designsystem
     }
-
-    package "domain" <<domain>> {
-        package "usecases" <<internal>> {
-            class CleanLocalUserDataUseCase
-            class RefreshAccessTokenUseCase
-        }
-
-        package "models" <<internal>> {
-            class AuthError {
-                + type: AuthErrorType
-                + message: String
-            }
-            enum AuthErrorType {
-                RefreshTokenIsNotSpecified
-                InvalidRefreshToken
-                InvalidAccessToken
-                OAuthServiceUnavailable
-                UnknownAuthError
-            }
-            class AuthDataModel {
-                + accessToken: String
-                + refreshToken: String
-            }
-        }
-
-        package "repositories" <<internal>> {
-            interface AuthRepository {
-                fun cleanAuthData()
-                fun setAccessToken(token: String)
-                fun setRefreshToken(token: String)
-                fun getAccessToken(): String?
-                fun getRefreshToken(): String?
-                fun isUserAuthorized(): Boolean
-                suspend fun observeAuthErrors(): Flow<AuthError>
-            }
-        }
-
-        package "datasource" <<domain>> {
-            interface AuthTokenDataSource {
-                fun isUserAuthorized(): Boolean
-                fun getAccessToken(): String?
-                fun getRefreshToken(): String?
-                fun setAccessToken(token: String)
-                fun setRefreshToken(token: String)
-            }
-
-            interface AuthErrorDataSource {
-                fun emitError(error: AuthError)
-                fun observeError(): Flow<AuthError>
-            }
-        }
-    }
-
-    package "data" <<data>> <<internal>> {
-        package "repositories"  {
-            class AuthRepositoryImpl {
-                - authTokenDataSource: AuthTokenDataSource
-                - authErrorDataSource: AuthErrorDataSource
-                - remoteDataSource: HttpClient
-            }
-        }
-
-        package "datasource" {
-            class AuthErrorDataSourceImpl
-            class AuthTokenDataSourceImpl
-            class NetworkRefreshTokenDataSource <<internal>>
-        }
-
-        package "refresh" {
-            class AuthRefreshFeatureImpl {
-                - cleanLocalUserDataUseCase: CleanLocalUserDataUseCase
-                - authTokenDataSource: AuthTokenDataSource
-                - authErrorDataSource: AuthErrorDataSource
-                - refreshTokenDataSource: NetworkRefreshTokenDataSource
-                - json: Json
-            }
-        }
-    }
-
-    package "di" <<di>> {
-        class AuthModules
-    }
-
-    di .[ArrowDomain].> domain
-    di .[ArrowPresentation].> presentation
-    di .[ArrowData].> data
-    presentation .[ArrowDomain].> domain
-
-    data.repositories.AuthRepositoryImpl .[ArrowDomain].|> domain.repositories.AuthRepository
-    data.repositories.AuthRepositoryImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
-    data.repositories.AuthRepositoryImpl o-[ArrowDomain]- domain.datasource.AuthErrorDataSource
-
-    data.datasource.AuthErrorDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthErrorDataSource
-    data.datasource.AuthTokenDataSourceImpl .[ArrowDomain].|> domain.datasource.AuthTokenDataSource
-    data.datasource.AuthTokenDataSourceImpl .[ArrowDomain].> domain.models.AuthDataModel
-
-    domain.models.AuthError .[ArrowDomain].> domain.models.AuthErrorType
-    domain.datasource.AuthErrorDataSource .[ArrowDomain].> domain.models.AuthError
-    domain.repositories.AuthRepository .[ArrowDomain].> domain.models.AuthError
-
-    domain.usecases.CleanLocalUserDataUseCase .[ArrowDomain].> domain.repositories.AuthRepository
-    domain.usecases.RefreshAccessTokenUseCase .[ArrowDomain].> domain.repositories.AuthRepository
-
-    data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.usecases.CleanLocalUserDataUseCase
-    data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthTokenDataSource
-    data.refresh.AuthRefreshFeatureImpl o-[ArrowDomain]- domain.datasource.AuthErrorDataSource
-    data.refresh.AuthRefreshFeatureImpl o-[ArrowData]- data.datasource.NetworkRefreshTokenDataSource
-    data.refresh.AuthRefreshFeatureImpl .[ArrowCore].|> core.network.AuthRefreshFeature
-
-    presentation .[ArrowCore].> core.designsystem
 }
 
 application.Application .[ArrowCore].> core.designsystem
 
-application.navigation.AppNavigation .[ArrowPresentation].> featureauth.presentation.Navigation
+application.navigation.AppNavigation .[ArrowPresentation].> features.auth.presentation.Navigation
 
-application.di.AppModules .[ArrowDI].> featureauth.di.AuthModules
+application.di.AppModules .[ArrowDI].> features.auth.di.AuthModules
 application.di.AppModules .[ArrowDI].> core.network.DiModule
 application.di.AppModules .[ArrowDI].> core.datastore.DiModule
 application.di.AppModules .[ArrowDI].> core.database.DiModule
 
-featureauth.presentation .[ArrowCore].> core.designsystem
+features.auth.presentation .[ArrowCore].> core.designsystem
 
 @enduml
