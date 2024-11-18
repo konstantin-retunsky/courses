@@ -224,17 +224,159 @@ package "features" <<features>> {
 
         presentation .[ArrowCore].> core.designsystem
     }
+
+		package "course" {
+				package "presentation" <<presentation>> {
+						class CourseScreens <<internal>>
+						class CourseViewModels <<internal>>
+						class Components <<internal>>
+						class Navigation
+				}
+
+				package "domain" <<domain>> {
+						package "usecases" <<internal>> {
+								class GetCourseListUseCase
+								class GetCourseDetailsUseCase
+								class SearchCoursesUseCase
+								class FilterCoursesUseCase
+								class SortCoursesUseCase
+								class AddCourseToFavoritesUseCase
+								class RemoveCourseFromFavoritesUseCase
+						}
+
+						package "models" <<internal>> {
+								class Course {
+										+ id: String
+										+ title: String
+										+ description: String
+										+ price: Double
+										+ rating: Double
+										+ dateAdded: Date
+										+ imageUrl: String
+										+ platform: Platform
+										+ category: CourseCategory
+										+ difficultyLevel: String
+								}
+
+								class CourseCategory {
+										+ id: String
+										+ name: String
+										+ description: String
+								}
+
+								class Platform {
+										+ id: String
+										+ name: String
+										+ url: String
+										+ logoUrl: String
+								}
+
+								class FilterOptions {
+										+ categories: List<CourseCategory>
+										+ difficultyLevels: List<String>
+										+ priceRange: PriceRange
+										+ platforms: List<Platform>
+								}
+
+								class PriceRange {
+										+ minPrice: Double
+										+ maxPrice: Double
+								}
+
+								enum SortOption {
+										ByDateAdded
+										ByRating
+										ByPopularity
+								}
+						}
+
+						package "repositories" <<internal>> {
+								interface CourseRepository {
+										suspend fun getAllCourses(): List<Course>
+										suspend fun getCourseDetails(courseId: String): Course
+										suspend fun searchCourses(query: String): List<Course>
+										suspend fun filterCourses(filterOptions: FilterOptions): List<Course>
+										suspend fun sortCourses(sortOption: SortOption): List<Course>
+										suspend fun addCourseToFavorites(courseId: String)
+										suspend fun removeCourseFromFavorites(courseId: String)
+										suspend fun getFavoriteCourses(): List<Course>
+								}
+						}
+
+						package "datasource" <<domain>> {
+								interface RemoteCourseDataSource {
+										suspend fun fetchAllCourses(): List<Course>
+										suspend fun fetchCourseDetails(courseId: String): Course
+										suspend fun searchCourses(query: String): List<Course>
+								}
+
+								interface LocalCourseDataSource {
+										fun getFavoriteCourses(): List<Course>
+										fun addCourseToFavorites(course: Course)
+										fun removeCourseFromFavorites(course: Course)
+								}
+						}
+				}
+
+				package "data" <<data>> <<internal>> {
+						package "repositories" {
+								class CourseRepositoryImpl {
+										- remoteDataSource: RemoteCourseDataSource
+										- localDataSource: LocalCourseDataSource
+								}
+						}
+
+						package "datasource" {
+								class RemoteCourseDataSourceImpl
+								class LocalCourseDataSourceImpl
+						}
+				}
+
+				package "di" <<di>> {
+						class CourseModules
+				}
+
+				di .[ArrowDomain].> domain
+				di .[ArrowPresentation].> presentation
+				di .[ArrowData].> data
+				presentation .[ArrowDomain].> domain
+
+				data.repositories.CourseRepositoryImpl .[ArrowDomain].|> domain.repositories.CourseRepository
+				data.repositories.CourseRepositoryImpl o-[ArrowDomain]- domain.datasource.RemoteCourseDataSource
+				data.repositories.CourseRepositoryImpl o-[ArrowDomain]- domain.datasource.LocalCourseDataSource
+
+				data.datasource.RemoteCourseDataSourceImpl .[ArrowDomain].|> domain.datasource.RemoteCourseDataSource
+				data.datasource.LocalCourseDataSourceImpl .[ArrowDomain].|> domain.datasource.LocalCourseDataSource
+
+				domain.repositories.CourseRepository .[ArrowDomain].> domain.models.Course
+				domain.datasource.RemoteCourseDataSource .[ArrowDomain].> domain.models.Course
+				domain.datasource.LocalCourseDataSource .[ArrowDomain].> domain.models.Course
+
+				domain.usecases.GetCourseListUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+				domain.usecases.GetCourseDetailsUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+				domain.usecases.SearchCoursesUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+				domain.usecases.FilterCoursesUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+				domain.usecases.SortCoursesUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+				domain.usecases.AddCourseToFavoritesUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+				domain.usecases.RemoveCourseFromFavoritesUseCase .[ArrowDomain].> domain.repositories.CourseRepository
+
+				presentation .[ArrowCore].> core.designsystem
+		}
 }
 
 application.Application .[ArrowCore].> core.designsystem
 
 application.navigation.AppNavigation .[ArrowPresentation].> features.auth.presentation.Navigation
+application.navigation.AppNavigation .[ArrowPresentation].> features.course.presentation.Navigation
 
 application.di.AppModules .[ArrowDI].> features.auth.di.AuthModules
+application.di.AppModules .[ArrowDI].> features.course.di.CourseModules
+
 application.di.AppModules .[ArrowDI].> core.network.DiModule
 application.di.AppModules .[ArrowDI].> core.datastore.DiModule
 application.di.AppModules .[ArrowDI].> core.database.DiModule
 
 features.auth.presentation .[ArrowCore].> core.designsystem
+features.course.presentation .[ArrowCore].> core.designsystem
 
 @enduml
