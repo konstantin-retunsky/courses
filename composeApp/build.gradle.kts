@@ -5,8 +5,8 @@ plugins {
 	alias(libs.plugins.multiplatform)
 	alias(libs.plugins.compose.compiler)
 	alias(libs.plugins.compose)
-	alias(libs.plugins.android.application)
 	alias(libs.plugins.kotlinx.serialization)
+	alias(libs.plugins.convention.plugin.application)
 }
 
 kotlin {
@@ -73,21 +73,5 @@ kotlin {
 			implementation(libs.ktor.client.darwin)
 		}
 		
-	}
-}
-
-android {
-	namespace = "com.courses"
-	compileSdk = 35
-	
-	defaultConfig {
-		minSdk = 21
-		targetSdk = 35
-		
-		applicationId = "com.courses.androidApp"
-		versionCode = 1
-		versionName = "1.0.0"
-		
-		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 	}
 }

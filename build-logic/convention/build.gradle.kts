@@ -43,7 +43,10 @@ tasks.withType<KotlinCompile>().configureEach {
 
 gradlePlugin {
 	plugins {
-	
+		register("conventionPluginApplication") {
+			id = libs.plugins.convention.plugin.application.get().pluginId
+			implementationClass = "com.courses.plugins.ApplicationConventionPlugin"
+		}
 	}
 }
 
