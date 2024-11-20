@@ -1,7 +1,5 @@
 import org.jetbrains.compose.ExperimentalComposeLibrary
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 
 plugins {
 	alias(libs.plugins.multiplatform)
@@ -14,11 +12,7 @@ plugins {
 kotlin {
 	jvmToolchain(jdkVersion = JavaVersion.VERSION_17.toString().toInt())
 	
-	androidTarget {
-		//https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-test.html
-		@OptIn(ExperimentalKotlinGradlePluginApi::class)
-		instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
-	}
+	androidTarget()
 	
 	@OptIn(ExperimentalWasmDsl::class)
 	wasmJs {
@@ -96,10 +90,4 @@ android {
 		
 		testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 	}
-}
-
-//https://developer.android.com/develop/ui/compose/testing#setup
-dependencies {
-	androidTestImplementation(libs.androidx.uitest.junit4)
-	debugImplementation(libs.androidx.uitest.test.manifest)
 }

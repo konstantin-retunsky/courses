@@ -34,12 +34,16 @@ dependencyResolutionManagement {
 
 include(":composeApp")
 
-include(":core:network")
-include(":core:database")
-include(":core:datastore")
-include(":core:designsystem")
+include(
+	":core:network",
+	":core:database",
+	":core:datastore",
+	":core:designsystem",
+)
 
-include(":features:auth")
-include(":features:onboarding")
+include(
+	":features:auth",
+	":features:onboarding",
+)
 
 
