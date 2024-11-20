@@ -1,8 +1,6 @@
 import org.jetbrains.compose.ExperimentalComposeLibrary
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
-	alias(libs.plugins.multiplatform)
 	alias(libs.plugins.compose.compiler)
 	alias(libs.plugins.compose)
 	alias(libs.plugins.kotlinx.serialization)
@@ -10,27 +8,6 @@ plugins {
 }
 
 kotlin {
-	jvmToolchain(jdkVersion = JavaVersion.VERSION_17.toString().toInt())
-	
-	androidTarget()
-	
-	@OptIn(ExperimentalWasmDsl::class)
-	wasmJs {
-		browser()
-		binaries.executable()
-	}
-	
-	listOf(
-		iosX64(),
-		iosArm64(),
-		iosSimulatorArm64()
-	).forEach {
-		it.binaries.framework {
-			baseName = "ComposeApp"
-			isStatic = true
-		}
-	}
-	
 	sourceSets {
 		commonMain.dependencies {
 			implementation(compose.runtime)
@@ -38,14 +15,14 @@ kotlin {
 			implementation(compose.material3)
 			implementation(compose.components.resources)
 			implementation(compose.components.uiToolingPreview)
+			implementation(libs.androidx.lifecycle.runtime.compose)
+			implementation(libs.androidx.navigation.composee)
 			implementation(libs.kotlinx.coroutines.core)
 			implementation(libs.ktor.client.core)
 			implementation(libs.ktor.client.content.negotiation)
 			implementation(libs.ktor.client.serialization)
 			implementation(libs.ktor.client.logging)
 			implementation(libs.androidx.lifecycle.viewmodel)
-			implementation(libs.androidx.lifecycle.runtime.compose)
-			implementation(libs.androidx.navigation.composee)
 			implementation(libs.kotlinx.serialization.json)
 			implementation(libs.koin.core)
 			implementation(libs.koin.compose)
@@ -72,6 +49,5 @@ kotlin {
 		iosMain.dependencies {
 			implementation(libs.ktor.client.darwin)
 		}
-		
 	}
 }

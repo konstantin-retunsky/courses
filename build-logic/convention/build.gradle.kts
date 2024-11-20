@@ -47,6 +47,11 @@ gradlePlugin {
 			id = libs.plugins.convention.plugin.application.get().pluginId
 			implementationClass = "com.courses.plugins.ApplicationConventionPlugin"
 		}
+		
+		register("conventionPluginLibrary") {
+			id = libs.plugins.convention.plugin.library.get().pluginId
+			implementationClass = "com.courses.plugins.LibraryConventionPlugin"
+		}
 	}
 }
 
