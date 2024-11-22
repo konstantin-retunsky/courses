@@ -17,6 +17,7 @@ import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import kotlin.reflect.KClass
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
@@ -28,9 +29,9 @@ sealed class NetworkResult<out T> {
 }
 
 sealed class NetworkError : Throwable() {
-	data object Timeout : NetworkError()
-	data object NoInternet : NetworkError()
-	data object IoException : NetworkError()
+	object Timeout : NetworkError()
+	object NoInternet : NetworkError()
+	object IoException : NetworkError()
 	data class ServerError(val code: Int, val serverError: String?) : NetworkError()
 	data class UnknownError(val throwable: Throwable) : NetworkError()
 }
@@ -59,27 +60,19 @@ enum class HttpMethodType {
 	GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
 }
 
-class RequestBuilder {
-	var path: String = ""
-	var method: HttpMethodType = HttpMethodType.GET
-	private val headersMap: MutableMap<String, String> = mutableMapOf()
-	private var requestBody: Any? = null
-	
-	fun path(path: String) {
-		this.path = path
-	}
-	
-	fun method(method: HttpMethodType) {
-		this.method = method
-	}
-	
-	fun headers(headers: Map<String, String>) {
-		headersMap.putAll(headers)
-	}
-	
-	fun body(body: Any) {
-		requestBody = body
-	}
+interface RequestBuilder {
+	var path: String
+	var method: HttpMethodType
+	fun headers(headers: Map<String, String>)
+	fun body(body: Any)
+}
+
+class JsonRequestBuilder(
+	override var path: String = "",
+	override var method: HttpMethodType = HttpMethodType.GET,
+	private val headersMap: MutableMap<String, String> = mutableMapOf(),
+	private var requestBody: Any? = null,
+) : RequestBuilder {
 	
 	fun build(builder: HttpRequestBuilder) {
 		builder.url {
@@ -104,6 +97,39 @@ class RequestBuilder {
 			builder.setBody(it)
 		}
 	}
+	
+	override fun headers(headers: Map<String, String>) {
+		headersMap.putAll(headers)
+	}
+	
+	override fun body(body: Any) {
+		requestBody = body
+	}
+}
+
+interface ResponseParser {
+	suspend fun <T : Any> parse(response: HttpResponse, responseClass: KClass<T>): T
+}
+
+class JsonResponseParser(private val json: Json) : ResponseParser {
+	@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
+	override suspend fun <T : Any> parse(response: HttpResponse, responseClass: KClass<T>): T {
+		val responseBody = response.body<String>()
+		val deserializationStrategy: DeserializationStrategy<T> =
+			json.serializersModule.getContextual(responseClass) ?: responseClass.serializer()
+		
+		return json.decodeFromString(deserializationStrategy, responseBody)
+	}
+}
+
+interface ErrorHandler {
+	fun handle(exception: Throwable): NetworkError
+}
+
+class DefaultErrorHandler(private val exceptionMapper: ExceptionMapper) : ErrorHandler {
+	override fun handle(exception: Throwable): NetworkError {
+		return exceptionMapper.map(exception)
+	}
 }
 
 interface HttpClient {
@@ -115,38 +141,33 @@ interface HttpClient {
 
 class HttpClientImpl(
 	private val client: io.ktor.client.HttpClient,
-	private val exceptionMapper: ExceptionMapper,
-	private val json: Json,
+	private val responseParser: ResponseParser,
+	private val errorHandler: ErrorHandler,
+	private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : HttpClient {
 	
 	override suspend fun <T : Any> request(
 		config: RequestBuilder.() -> Unit,
 		responseClass: KClass<T>,
 	): NetworkResult<T> {
-		return safeApiCall {
-			val requestBuilder = RequestBuilder().apply(config)
+		return safeApiCall(dispatcher) {
+			val requestBuilder = JsonRequestBuilder().apply(config)
 			val response: HttpResponse = client.request {
 				requestBuilder.build(this)
 			}
-			parseResponse(response, responseClass)
+			responseParser.parse(response, responseClass)
 		}
 	}
 	
-	@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
-	private suspend fun <T : Any> parseResponse(response: HttpResponse, responseClass: KClass<T>): T {
-		val responseBody = response.body<String>()
-		val deserializationStrategy: DeserializationStrategy<T> =
-			json.serializersModule.getContextual(responseClass) ?: responseClass.serializer()
-		
-		return json.decodeFromString(deserializationStrategy, responseBody)
-	}
-	
-	private suspend fun <T> safeApiCall(apiCall: suspend () -> T): NetworkResult<T> {
+	private suspend fun <T> safeApiCall(
+		dispatcher: CoroutineDispatcher,
+		apiCall: suspend () -> T,
+	): NetworkResult<T> {
 		return try {
-			val response = withContext(Dispatchers.Default) { apiCall() }
+			val response = withContext(dispatcher) { apiCall() }
 			NetworkResult.Success(response)
 		} catch (e: Throwable) {
-			val networkError = exceptionMapper.map(e)
+			val networkError = errorHandler.handle(e)
 			NetworkResult.Error(networkError, networkError.toString())
 		}
 	}
@@ -162,25 +183,22 @@ interface HttpClientProvider {
 	val client: io.ktor.client.HttpClient
 }
 
-class DefaultHttpClientProvider : HttpClientProvider {
+class DefaultHttpClientProvider(
+	private val baseUrl: String,
+	private val json: Json,
+) : HttpClientProvider {
 	override val client: io.ktor.client.HttpClient by lazy {
 		HttpClient {
 			install(Logging) {
 				level = LogLevel.BODY
 			}
 			install(ContentNegotiation) {
-				json(Json {
-					prettyPrint = false // Отключить форматирование
-					encodeDefaults = true // Кодировать значения по умолчанию
-					
-					isLenient = true // Разрешить нестрогий синтаксис
-					ignoreUnknownKeys = true // Игнорировать неизвестные поля в JSON
-				})
+				json(json)
 			}
 			defaultRequest {
 				url {
 					protocol = URLProtocol.HTTPS
-					host = "jsonplaceholder.typicode.com"
+					host = baseUrl
 				}
 				headers.append("Accept", "application/json")
 			}
@@ -188,16 +206,41 @@ class DefaultHttpClientProvider : HttpClientProvider {
 	}
 }
 
-object ServiceLocator {
-	private val httpClientProvider: HttpClientProvider = DefaultHttpClientProvider()
-	private val exceptionMapper: ExceptionMapper = DefaultExceptionMapper()
+object HttpClientFactory {
+	fun create(
+		clientProvider: HttpClientProvider,
+		responseParser: ResponseParser,
+		errorHandler: ErrorHandler,
+	): HttpClient {
+		return HttpClientImpl(
+			client = clientProvider.client,
+			responseParser = responseParser,
+			errorHandler = errorHandler
+		)
+	}
+}
+
+class NetworkModule(
+	private val baseUrl: String,
 	private val json: Json = Json {
 		prettyPrint = false
 		encodeDefaults = true
 		isLenient = true
 		ignoreUnknownKeys = true
-	}
-	
-	val networkClient: HttpClient = HttpClientImpl(httpClientProvider.client, exceptionMapper, json)
+	},
+) {
+	val exceptionMapper: ExceptionMapper = DefaultExceptionMapper()
+	val errorHandler: ErrorHandler = DefaultErrorHandler(exceptionMapper)
+	val responseParser: ResponseParser = JsonResponseParser(json)
+	val httpClientProvider: HttpClientProvider = DefaultHttpClientProvider(baseUrl, json)
+	val networkClient: HttpClient = HttpClientFactory.create(
+		clientProvider = httpClientProvider,
+		responseParser = responseParser,
+		errorHandler = errorHandler
+	)
 }
 
+fun provideNetworkClient(): HttpClient {
+	val networkModule = NetworkModule(baseUrl = "jsonplaceholder.typicode.com")
+	return networkModule.networkClient
+}
