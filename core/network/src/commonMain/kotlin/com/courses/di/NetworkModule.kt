@@ -4,8 +4,8 @@ import com.courses.client.HttpClient
 import com.courses.client.HttpClientImpl
 import com.courses.client.error.DefaultErrorHandler
 import com.courses.client.error.ErrorHandler
-import com.courses.client.exception.DefaultExceptionMapper
-import com.courses.client.exception.ExceptionMapper
+import com.courses.client.error.DefaultExceptionMapper
+import com.courses.client.error.ExceptionMapper
 import com.courses.client.parser.JsonResponseParser
 import com.courses.client.parser.ResponseParser
 import io.ktor.client.HttpClient as KtorHttpClient

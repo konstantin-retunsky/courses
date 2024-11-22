@@ -1,4 +1,4 @@
-package com.courses.client.exception
+package com.courses.client.error
 
 import com.courses.client.result.NetworkError
 import io.ktor.client.plugins.ClientRequestException
@@ -7,7 +7,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.io.IOException
 
 class DefaultExceptionMapper : ExceptionMapper {
-	override fun map(exception: Throwable): NetworkError {
+	override fun handle(exception: Throwable): NetworkError {
 		return when (exception) {
 			is IOException -> NetworkError.IoException
 			is TimeoutCancellationException -> NetworkError.Timeout
