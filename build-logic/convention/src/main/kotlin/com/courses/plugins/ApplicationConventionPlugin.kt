@@ -13,7 +13,7 @@ class ApplicationConventionPlugin : Plugin<Project> {
 		plugins.apply(libs.findPlugin("android-application").get().get().pluginId)
 		plugins.apply(libs.findPlugin("kotlin-multiplatform").get().get().pluginId)
 		
-		extensions.configure<ApplicationExtension>(::configureAndroid)
+		extensions.configure<ApplicationExtension>(::configureAndroidApplication)
 		extensions.configure<KotlinMultiplatformExtension>(::configureKotlinMultiplatform)
 	}
 }

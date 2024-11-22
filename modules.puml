@@ -62,7 +62,7 @@ package "core" <<core>> {
             suspend fun <T> patch(endpoint: String, body: Any, headers: Map<String, String>)
         }
         class HttpClientImpl <<internal>>
-        class AuthRefreshFeature <<internal>>
+        class AuthRefreshFeature
         class DiModule
     }
     package "datastore" <<core>> {

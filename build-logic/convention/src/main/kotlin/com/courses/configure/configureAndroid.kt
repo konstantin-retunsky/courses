@@ -1,16 +1,35 @@
 package com.courses.configure
 
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.gradle.BaseExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import java.util.Locale
 
-internal fun Project.configureAndroid(extension: ApplicationExtension) {
+private val defaultPackageName = "com.courses"
+
+
+internal fun Project.configureAndroidLibrary(extension: LibraryExtension) {
 	extension.apply {
 		val moduleName = deriveModuleName()
-		val defaultPackageName = "com.courses"
+		
+		namespace = "$defaultPackageName${if (moduleName.isNotEmpty()) ".$moduleName" else ""}"
+		
+		compileSdk = libs.findVersion("projectAndroidCompileSdk").get().requiredVersion.toInt()
+		
+		defaultConfig {
+			minSdk = libs.findVersion("projectAndroidMinSdk").get().requiredVersion.toInt()
+		}
+		
+		configureCompileOptions()
+	}
+}
+
+internal fun Project.configureAndroidApplication(extension: ApplicationExtension) {
+	extension.apply {
+		val moduleName = deriveModuleName()
 		
 		compileSdk = libs.findVersion("projectAndroidCompileSdk").get().requiredVersion.toInt()
 		namespace = "$defaultPackageName${if (moduleName.isNotEmpty()) ".$moduleName" else ""}"
@@ -29,19 +48,6 @@ internal fun Project.configureAndroid(extension: ApplicationExtension) {
 	}
 }
 
-private fun Project.deriveModuleName(): String {
-	return path
-		.split(":")
-		.drop(2)
-		.joinToString(".")
-		.split("-")
-		.joinToString("") {
-			it.replaceFirstChar { char ->
-				if (char.isLowerCase()) char.titlecase(Locale.ROOT) else char.toString()
-			}
-		}
-}
-
 private fun Project.configureCompileOptions() {
 	extensions.configure<BaseExtension> {
 		compileOptions {
@@ -53,3 +59,23 @@ private fun Project.configureCompileOptions() {
 		}
 	}
 }
+
+private fun Project.deriveModuleName(): String {
+	val moduleParts = path.split(":").drop(2)
+	
+	val joinedModuleParts = moduleParts.joinToString(".")
+	
+	return joinedModuleParts.split("-").joinToString("") { part ->
+		part.capitalizeFirstChar()
+	}
+}
+
+private fun String.capitalizeFirstChar(): String = replaceFirstChar {
+	if (it.isLowerCase()) {
+		it.titlecase(Locale.ROOT)
+	} else {
+		it.toString()
+	}
+}
+
+
