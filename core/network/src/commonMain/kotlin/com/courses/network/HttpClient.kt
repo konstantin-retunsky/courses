@@ -1,22 +1,26 @@
 package com.courses.network
 
 import io.ktor.client.*
-import io.ktor.client.HttpClient as KtorHttpClient
-import io.ktor.client.call.body
+import io.ktor.client.call.*
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
+import kotlin.reflect.KClass
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.serializer
 
 sealed class NetworkResult<out T> {
 	data class Success<out T>(val data: T) : NetworkResult<T>()
@@ -26,26 +30,28 @@ sealed class NetworkResult<out T> {
 sealed class NetworkError : Throwable() {
 	data object Timeout : NetworkError()
 	data object NoInternet : NetworkError()
-	data object IOException : NetworkError()
+	data object IoException : NetworkError()
 	data class ServerError(val code: Int, val serverError: String?) : NetworkError()
 	data class UnknownError(val throwable: Throwable) : NetworkError()
 }
 
-private fun mapExceptionToNetworkError(exception: Throwable): NetworkError {
-	return when (exception) {
-		is IOException -> NetworkError.IOException
-		is TimeoutCancellationException -> NetworkError.Timeout
-		is ClientRequestException -> NetworkError.ServerError(
-			exception.response.status.value,
-			exception.message
-		)
-		
-		is ServerResponseException -> NetworkError.ServerError(
-			exception.response.status.value,
-			exception.message
-		)
-		
-		else -> NetworkError.UnknownError(exception)
+interface ExceptionMapper {
+	fun map(exception: Throwable): NetworkError
+}
+
+class DefaultExceptionMapper : ExceptionMapper {
+	override fun map(exception: Throwable): NetworkError {
+		return when (exception) {
+			is IOException -> NetworkError.IoException
+			is TimeoutCancellationException -> NetworkError.Timeout
+			is ClientRequestException, is ServerResponseException -> {
+				val code = (exception as? ClientRequestException)?.response?.status?.value
+					?: (exception as? ServerResponseException)?.response?.status?.value ?: -1
+				NetworkError.ServerError(code, exception.message)
+			}
+			
+			else -> NetworkError.UnknownError(exception)
+		}
 	}
 }
 
@@ -75,7 +81,7 @@ class RequestBuilder {
 		requestBody = body
 	}
 	
-	fun applyTo(builder: HttpRequestBuilder) {
+	fun build(builder: HttpRequestBuilder) {
 		builder.url {
 			encodedPath = path
 		}
@@ -100,42 +106,65 @@ class RequestBuilder {
 	}
 }
 
+interface HttpClient {
+	suspend fun <T : Any> request(
+		config: RequestBuilder.() -> Unit,
+		responseClass: KClass<T>,
+	): NetworkResult<T>
+}
 
-class HttpClient(
-	val client: KtorHttpClient = HttpClientProvider.client,
-) {
-	suspend inline fun <reified T> request(
-		crossinline config: RequestBuilder.() -> Unit,
+class HttpClientImpl(
+	private val client: io.ktor.client.HttpClient,
+	private val exceptionMapper: ExceptionMapper,
+	private val json: Json,
+) : HttpClient {
+	
+	override suspend fun <T : Any> request(
+		config: RequestBuilder.() -> Unit,
+		responseClass: KClass<T>,
 	): NetworkResult<T> {
-		return safeApiCall<T> {
+		return safeApiCall {
 			val requestBuilder = RequestBuilder().apply(config)
-			
 			val response: HttpResponse = client.request {
-				requestBuilder.applyTo(this)
+				requestBuilder.build(this)
 			}
-			
-			parseResponse(response)
+			parseResponse(response, responseClass)
 		}
 	}
 	
-	suspend inline fun <reified T> parseResponse(response: HttpResponse): T {
-		return response.body<T>()
+	@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class)
+	private suspend fun <T : Any> parseResponse(response: HttpResponse, responseClass: KClass<T>): T {
+		val responseBody = response.body<String>()
+		val deserializationStrategy: DeserializationStrategy<T> =
+			json.serializersModule.getContextual(responseClass) ?: responseClass.serializer()
+		
+		return json.decodeFromString(deserializationStrategy, responseBody)
 	}
 	
-	suspend fun <T> safeApiCall(apiCall: suspend () -> T): NetworkResult<T> {
+	private suspend fun <T> safeApiCall(apiCall: suspend () -> T): NetworkResult<T> {
 		return try {
 			val response = withContext(Dispatchers.Default) { apiCall() }
 			NetworkResult.Success(response)
 		} catch (e: Throwable) {
-			val networkError = mapExceptionToNetworkError(e)
+			val networkError = exceptionMapper.map(e)
 			NetworkResult.Error(networkError, networkError.toString())
 		}
 	}
 }
 
-private object HttpClientProvider {
-	val client: KtorHttpClient by lazy {
-		KtorHttpClient {
+suspend inline fun <reified T : Any> HttpClient.request(
+	noinline config: RequestBuilder.() -> Unit,
+): NetworkResult<T> {
+	return this.request(config, T::class)
+}
+
+interface HttpClientProvider {
+	val client: io.ktor.client.HttpClient
+}
+
+class DefaultHttpClientProvider : HttpClientProvider {
+	override val client: io.ktor.client.HttpClient by lazy {
+		HttpClient {
 			install(Logging) {
 				level = LogLevel.BODY
 			}
@@ -151,10 +180,24 @@ private object HttpClientProvider {
 			defaultRequest {
 				url {
 					protocol = URLProtocol.HTTPS
-					host = "jsonplaceholder.typicode.com" // Установите хост JSONPlaceholder
+					host = "jsonplaceholder.typicode.com"
 				}
 				headers.append("Accept", "application/json")
 			}
 		}
 	}
 }
+
+object ServiceLocator {
+	private val httpClientProvider: HttpClientProvider = DefaultHttpClientProvider()
+	private val exceptionMapper: ExceptionMapper = DefaultExceptionMapper()
+	private val json: Json = Json {
+		prettyPrint = false
+		encodeDefaults = true
+		isLenient = true
+		ignoreUnknownKeys = true
+	}
+	
+	val networkClient: HttpClient = HttpClientImpl(httpClientProvider.client, exceptionMapper, json)
+}
+
