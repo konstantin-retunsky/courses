@@ -8,7 +8,7 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import java.util.Locale
 
-private val defaultPackageName = "com.courses"
+private const val defaultPackageName = "com.courses"
 
 
 internal fun Project.configureAndroidLibrary(extension: LibraryExtension) {

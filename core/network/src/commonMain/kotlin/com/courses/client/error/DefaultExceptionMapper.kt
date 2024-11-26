@@ -1,8 +1,7 @@
 package com.courses.client.error
 
 import com.courses.client.result.NetworkError
-import io.ktor.client.plugins.ClientRequestException
-import io.ktor.client.plugins.ServerResponseException
+import io.ktor.client.plugins.ResponseException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.io.IOException
 
@@ -11,10 +10,9 @@ class DefaultExceptionMapper : ExceptionMapper {
 		return when (exception) {
 			is IOException -> NetworkError.IoException
 			is TimeoutCancellationException -> NetworkError.Timeout
-			is ClientRequestException, is ServerResponseException -> {
-				val code = (exception as? ClientRequestException)?.response?.status?.value
-					?: (exception as? ServerResponseException)?.response?.status?.value ?: -1
-				NetworkError.ServerError(code, exception.message)
+			is ResponseException -> {
+				val code = exception.response.status.value
+				NetworkError.ServerError(code, exception.message ?: "Server Error")
 			}
 			
 			else -> NetworkError.UnknownError(exception)

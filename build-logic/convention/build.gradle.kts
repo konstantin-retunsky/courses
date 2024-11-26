@@ -22,6 +22,7 @@ dependencies {
 	compileOnly(libs.gradle.plugin.kotlin)
 	compileOnly(libs.gradle.plugin.compose)
 	compileOnly(libs.gradle.plugin.compose.compiler)
+	compileOnly(libs.gradle.plugin.mokkery)
 }
 
 private val javaVersion = JavaVersion.toVersion(libs.versions.projectJavaVersion.get())
@@ -51,6 +52,11 @@ gradlePlugin {
 		register("conventionPluginMultiplatformLibrary") {
 			id = libs.plugins.convention.plugin.multiplatform.library.get().pluginId
 			implementationClass = "com.courses.plugins.MultiplatformLibraryConventionPlugin"
+		}
+		
+		register("conventionPluginTests") {
+			id = libs.plugins.convention.plugin.tests.get().pluginId
+			implementationClass = "com.courses.plugins.TestsConventionPlugin"
 		}
 	}
 }

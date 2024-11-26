@@ -1,5 +1,7 @@
 plugins {
 	alias(libs.plugins.convention.plugin.multiplatform.library)
+	alias(libs.plugins.convention.plugin.tests)
+	alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
@@ -18,6 +20,10 @@ kotlin {
 		
 		iosMain.dependencies {
 			implementation(libs.ktor.client.darwin)
+		}
+		
+		commonTest.dependencies {
+			implementation(libs.ktor.client.mock)
 		}
 	}
 }

@@ -9,7 +9,7 @@ androidx-ui-test = "1.7.5"
 androidx-lifecycle = "2.8.4"
 androidx-navigation = "2.8.0-alpha10"
 android-tools = "31.7.2"
-kotlin = "2.1.0-RC2"
+kotlin = "2.0.21"
 kotlinx-coroutines = "1.9.0"
 kotlinx-serialization = "1.7.3"
 kotlinx-datetime = "0.6.1"
@@ -19,14 +19,13 @@ koin = "4.0.0"
 coil = "3.0.3"
 multiplatform-settings = "1.2.0"
 room = "2.7.0-alpha11"
+mokkery = "2.5.1"
 
 [libraries]
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
 androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-navigation-composee = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
-androidx-uitest-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-ui-test" }
-androidx-uitest-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-ui-test" }
 
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
@@ -41,6 +40,7 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-serialization = { module = "io.ktor:ktor-client-serialization", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
 ktor-client-winhttp = { module = "io.ktor:ktor-client-winhttp", version.ref = "ktor" }
@@ -54,6 +54,10 @@ coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.re
 
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 
+#testing
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+
 #gradle plugins
 gradle-plugin-android-gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 gradle-plugin-android-tools-common = { group = "com.android.tools", name = "common", version.ref = "android-tools" }
@@ -61,6 +65,7 @@ gradle-plugin-room = { group = "androidx.room", name = "room-gradle-plugin", ver
 gradle-plugin-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 gradle-plugin-compose = { module = "org.jetbrains.compose:compose-gradle-plugin", version.ref = "compose" }
 gradle-plugin-compose-compiler = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+gradle-plugin-mokkery = { group = "dev.mokkery", name = "mokkery-gradle", version.ref = "mokkery" }
 
 [plugins]
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -71,6 +76,10 @@ compose = { id = "org.jetbrains.compose", version.ref = "compose" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 
+#testing
+dev-mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
+
 #convention plugins
 convention-plugin-application = { id = "com.courses.convention.plugins.application" }
 convention-plugin-multiplatform-library = { id = "com.courses.convention.plugins.multiplatform.library" }
+convention-plugin-tests = { id = "com.courses.convention.plugins.tests" }

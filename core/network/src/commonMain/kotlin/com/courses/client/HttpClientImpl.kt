@@ -11,9 +11,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineDispatcher
+import io.ktor.client.HttpClient as KtorHttpClient
 
 class HttpClientImpl(
-	private val client: io.ktor.client.HttpClient,
+	private val client: KtorHttpClient,
 	private val responseParser: ResponseParser,
 	private val errorHandler: ErrorHandler,
 	private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
