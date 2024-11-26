@@ -5,12 +5,18 @@ plugins {
 	alias(libs.plugins.compose)
 	alias(libs.plugins.kotlinx.serialization)
 	alias(libs.plugins.convention.plugin.application)
+	alias(libs.plugins.convention.plugin.koin)
+}
+
+koinConventionConfig {
+	includeCompose = true
 }
 
 kotlin {
 	sourceSets {
 		commonMain.dependencies {
 			implementation(projects.core.network)
+			implementation(projects.core.datastore)
 			
 			implementation(compose.runtime)
 			implementation(compose.foundation)
@@ -22,8 +28,6 @@ kotlin {
 			implementation(libs.kotlinx.coroutines.core)
 			implementation(libs.androidx.lifecycle.viewmodel)
 			implementation(libs.kotlinx.serialization.json)
-			implementation(libs.koin.core)
-			implementation(libs.koin.compose)
 			implementation(libs.coil)
 			implementation(libs.multiplatform.settings)
 			implementation(libs.kotlinx.datetime)

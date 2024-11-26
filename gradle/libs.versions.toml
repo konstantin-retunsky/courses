@@ -50,7 +50,10 @@ ktor-client-winhttp = { module = "io.ktor:ktor-client-winhttp", version.ref = "k
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-anotations = { module = "io.insert-koin:koin-annotations", version.ref = "koin" }
+koin-ksp-compiler = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin" }
 
 coil = { module = "io.coil-kt.coil3:coil-compose-core", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
@@ -92,4 +95,5 @@ dev-mokkery = { id = "dev.mokkery", version.ref = "mokkery" }
 convention-plugin-application = { id = "com.courses.convention.plugins.application" }
 convention-plugin-multiplatform-library = { id = "com.courses.convention.plugins.multiplatform.library" }
 convention-plugin-tests = { id = "com.courses.convention.plugins.tests" }
-convention-plugin-data-store = { id = "com.courses.convention.plugins.data.store" }
+convention-plugin-datastore = { id = "com.courses.convention.plugins.data.store" }
+convention-plugin-koin = { id = "com.courses.convention.plugins.koin" }

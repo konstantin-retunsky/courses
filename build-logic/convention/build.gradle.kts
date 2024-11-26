@@ -60,8 +60,13 @@ gradlePlugin {
 		}
 		
 		register("conventionPluginDataStore") {
-			id = libs.plugins.convention.plugin.data.store.get().pluginId
+			id = libs.plugins.convention.plugin.datastore.get().pluginId
 			implementationClass = "com.courses.plugins.DataStoreConventionPlugin"
+		}
+		
+		register("conventionPluginKoin") {
+			id = libs.plugins.convention.plugin.koin.get().pluginId
+			implementationClass = "com.courses.plugins.KoinConventionPlugin"
 		}
 	}
 }
