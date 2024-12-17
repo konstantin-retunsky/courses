@@ -26,7 +26,7 @@ mokkery = "2.5.1"
 androidx-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "androidx-lifecycle" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
 androidx-lifecycle-runtime-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
-androidx-navigation-composee = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
+androidx-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "androidx-datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
 
@@ -97,3 +97,6 @@ convention-plugin-multiplatform-library = { id = "com.courses.convention.plugins
 convention-plugin-tests = { id = "com.courses.convention.plugins.tests" }
 convention-plugin-datastore = { id = "com.courses.convention.plugins.data.store" }
 convention-plugin-koin = { id = "com.courses.convention.plugins.koin" }
+convention-plugin-feature = { id = "com.courses.convention.plugins.feature" }
+convention-plugin-compose = { id = "com.courses.convention.plugins.compose" }
+

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.courses.di.appModule
+import com.courses.features.auth.presentation.AuthScreen
 import com.courses.network.client.HttpClient
 import com.courses.network.client.extension.request
 import com.courses.network.client.request.HttpMethod
@@ -87,6 +88,8 @@ internal fun App(
 					fontFamily = FontFamily(Font(Res.font.IndieFlower_Regular)),
 					style = MaterialTheme.typography.displayLarge
 				)
+				
+				AuthScreen()
 				
 				var isRotating by remember { mutableStateOf(false) }
 				

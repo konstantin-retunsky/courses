@@ -68,6 +68,16 @@ gradlePlugin {
 			id = libs.plugins.convention.plugin.koin.get().pluginId
 			implementationClass = "com.courses.plugins.KoinConventionPlugin"
 		}
+		
+		register("conventionPluginCompose") {
+			id = libs.plugins.convention.plugin.compose.get().pluginId
+			implementationClass = "com.courses.plugins.ComposeConventionPlugin"
+		}
+		
+		register("conventionPluginFeature") {
+			id = libs.plugins.convention.plugin.feature.get().pluginId
+			implementationClass = "com.courses.plugins.FeatureConventionPlugin"
+		}
 	}
 }
 
