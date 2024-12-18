@@ -5,8 +5,3 @@ plugins {
 	alias(libs.plugins.convention.plugin.koin)
 	alias(libs.plugins.kotlinx.serialization)
 }
-
-kotlin {
-	sourceSets {
-	}
-}
