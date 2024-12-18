@@ -3,7 +3,7 @@ projectJavaVersion = "17"
 projectAndroidCompileSdk = "35"
 projectAndroidMinSdk = "26"
 
-agp = "8.7.2"
+agp = "8.7.3"
 androidx-activity-compose = "1.9.3"
 androidx-ui-test = "1.7.5"
 androidx-lifecycle = "2.8.4"
