@@ -24,6 +24,7 @@ class TestsConventionPlugin : Plugin<Project> {
 				commonTest.dependencies {
 					implementation(libs.findLibrary("kotlin-test").get())
 					implementation(libs.findLibrary("kotlinx-coroutines-test").get())
+					implementation(libs.findLibrary("app-cash-turbine").get())
 				}
 			}
 		}

@@ -11,9 +11,10 @@ androidx-navigation = "2.8.0-alpha10"
 androidx-datastore = "1.1.1"
 android-tools = "31.7.3"
 kotlin = "2.1.0"
-kotlinx-coroutines = "1.9.0"
 kotlinx-serialization = "1.7.3"
 kotlinx-datetime = "0.6.1"
+kotlinx-coroutines = "1.9.0"
+turbine = "1.2.0"
 compose = "1.7.1"
 ktor = "3.0.1"
 koin = "4.0.0"
@@ -69,6 +70,7 @@ multiplatform-settings-datastore = { module = "com.russhwolf:multiplatform-setti
 #testing
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+app-cash-turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 #gradle plugins
 gradle-plugin-android-gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
