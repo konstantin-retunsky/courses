@@ -24,6 +24,9 @@ class ComposeConventionPlugin : Plugin<Project> {
 					implementation(composeDeeps.ui)
 					implementation(composeDeeps.components.resources)
 					implementation(composeDeeps.components.uiToolingPreview)
+
+					implementation(libs.findLibrary("haze").get())
+					implementation(libs.findLibrary("haze-materials").get())
 				}
 				
 				androidMain.dependencies {
